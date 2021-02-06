@@ -1,4 +1,7 @@
 use crabler::*;
+use std::io;
+use std::process;
+use std::error::Error;
 
 const ENTRY_PREFIX: &'static str = "https://chaturbate.com/tags/";
 
@@ -17,17 +20,20 @@ impl Scraper {
     }
 
     async fn tag_handler(&self, response: Response, el: Element) -> Result<()> {
-        // Print all tag info
-        if let tag_data = el.children() {
-            let tag_tag = &tag_data[0];
-            let tag_name = &tag_tag.children()[0];
-            let tag_views = &tag_data[1];
-            let tag_rooms = &tag_data[2];
+        // Print all tag info into SQL file
+        let tag_data = el.children();
+        let tag_tag = &tag_data[0];
+        if let Some(tag_name) = tag_tag.children()[0].text() {
+            if let Some(tag_views) = tag_data[1].text() {
+                if let Some(tag_rooms) = &tag_data[2].text() {
+                    // Add code for entering info to DB
+                }
+            }
         }
+
         Ok(())
     }
 }
-
 
 
 #[async_std::main]
