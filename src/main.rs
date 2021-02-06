@@ -18,9 +18,11 @@ impl Scraper {
 
     async fn tag_handler(&self, response: Response, el: Element) -> Result<()> {
         // Print all tag info
-        if let Some(tag_data) = el.children() {
-            let tag_name = tag_data.first().text();
-            print("{}", tag_name)
+        if let tag_data = el.children() {
+            let tag_tag = &tag_data[0];
+            let tag_name = &tag_tag.children()[0];
+            let tag_views = &tag_data[1];
+            let tag_rooms = &tag_data[2];
         }
         Ok(())
     }
