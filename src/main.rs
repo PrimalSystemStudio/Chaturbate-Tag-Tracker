@@ -1,7 +1,9 @@
+//Upload to Github after consulting Vi on a name
+
+use std::fs;
 use crabler::*;
-use std::io;
-use std::process;
-use std::error::Error;
+use chrono::prelude::*;
+use pyo3::prelude::*;
 
 const ENTRY_PREFIX: &'static str = "https://chaturbate.com/tags/";
 
@@ -20,13 +22,25 @@ impl Scraper {
     }
 
     async fn tag_handler(&self, response: Response, el: Element) -> Result<()> {
-        // Print all tag info into SQL file
+        // Import algorithms.py
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+        let al_string = fs::read_to_string("algorithms.py")
+            .expect("Error reading file.");
+        let algorithms = PyModule::from_code(py, &al_string, "algorithms.py", "algorithms");
+
+        // Define tag parameters
         let tag_data = el.children();
         let tag_tag = &tag_data[0];
         if let Some(tag_name) = tag_tag.children()[0].text() {
             if let Some(tag_views) = tag_data[1].text() {
                 if let Some(tag_rooms) = &tag_data[2].text() {
-                    // Add code for entering info to DB
+                    // Get current time
+                    let datetime = Utc::now().to_string();
+                    
+                    // Pass tag data to algorithms(add)
+                    let success = algorithms.call(py, "add", (tag_name, tag_views, tag_rooms, datetime), None).unwrap();
+                    println!("{:?}", success)
                 }
             }
         }
@@ -42,3 +56,4 @@ async fn main() -> Result<()> {
     let scraper = Scraper {};
     scraper.run(Opts::new().with_urls(vec![ENTRY_PREFIX])).await
 }
+
