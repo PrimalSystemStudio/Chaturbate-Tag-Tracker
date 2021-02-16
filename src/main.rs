@@ -36,7 +36,10 @@ impl Scraper {
             if let Some(tag_views) = tag_data[1].text() {
                 if let Some(tag_rooms) = &tag_data[2].text() {
                     // Get current time
-                    let datetime = Utc::now().to_string();
+                    let utcnow = Utc::now();
+                    let datetime = utcnow.format("%d-%m-%Y %H:%M:%S").to_string();
+
+                    println!("Tag: {} has {} viewers and {} rooms on {}", tag_name, tag_views, tag_rooms, datetime)
                     
                     // Pass tag data to algorithms(add)
                     let success = algorithms.call(py, "add", (tag_name, tag_views, tag_rooms, datetime), None).unwrap();
