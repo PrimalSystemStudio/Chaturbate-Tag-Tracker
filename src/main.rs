@@ -31,41 +31,53 @@ impl Scraper {
         Ok(())
     }
 
-    async fn tag_handler(&self, response: Response, el: Element) -> Result<()> {
-        // Import algorithms.py
-        /*
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let al_string = fs::read_to_string("algorithms.py")
-            .expect("Error reading file.");
-        let algorithms = PyModule::from_code(py, &al_string, "algorithms.py", "algorithms");
-        */
-
+    async fn tag_handler(&self, _: Response, el: Element) -> Result<()> {
+        // Get all elements nested in .tag_row
         let tag_data = el.children();
         let tag_tag = &tag_data[0];
+
+        // Get tag name, views and rooms 
         if let Some(tag_name) = tag_tag.children()[0].text() {
             if let Some(tag_views) = tag_data[1].text() {
-                if let Some(tag_rooms) = &tag_data[2].text() {
+                if let Some(tag_rooms) = tag_data[2].text() {
                     // Get current time
                     let utcnow = Utc::now();
                     let datetime = utcnow.format("%d-%m-%Y %H:%M:%S").to_string();
 
-                    println!("Tag: {} has {} viewers and {} rooms on {}", tag_name, tag_views, tag_rooms, datetime);
+                    // println!("Tag: {} has {} viewers and {} rooms on {}", tag_name, tag_views, tag_rooms, datetime);
                     
                     
-                    
-                    // Pass tag data to algorithms(add)
-                    /*
-                    let success = algorithms.call(py, "add", (tag_name, tag_views, tag_rooms, datetime), None).unwrap();
-                    println!("{:?}", success)*/
-                }
-            }
-        }
+                    let tag_info = (tag_name, tag_views, tag_rooms, datetime);
 
-        Ok(())
+                    // Pass tag data to algorithms.py for addition into the database
+                    let success = py_data(tag_info);
+                    println!("{:?}", success);
+                    Ok(())
+                } else {
+                    Err(CrablerError::BodyParsing("Error, no rooms".to_string()))
+                }
+            } else {
+                Err(CrablerError::BodyParsing("Error, no viewers".to_string()))
+            }
+        } else {
+            Err(CrablerError::BodyParsing("Error, no name".to_string()))
+        }
     }
 }
 
+fn py_data(data: (String, String, String, String)) -> PyResult<()> {
+    // Turn algorithms file to string
+    let al_string = fs::read_to_string("src/algorithms.py")
+        .expect("Error reading file.");
+
+    // Pass data to algorithms program
+    Python::with_gil(|py| {
+        let algorithm = PyModule::from_code(py, &al_string, "algorithms.py", "algorithms")?;
+        let add_result = algorithm.call1("add", data)?;
+        Ok(())
+    })
+
+}
 
 #[async_std::main]
 async fn main() -> Result<()> {
