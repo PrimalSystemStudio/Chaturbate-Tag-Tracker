@@ -1,5 +1,3 @@
-//Upload to Github after consulting Vi on a name
-
 use std::fs;
 use crabler::*;
 use chrono::prelude::*;
@@ -47,7 +45,7 @@ impl Scraper {
                     // println!("Tag: {} has {} viewers and {} rooms on {}", tag_name, tag_views, tag_rooms, datetime);
                     
                     
-                    let tag_info = (tag_name, tag_views, tag_rooms, datetime);
+                    let tag_info = (tag_name, tag_views.parse().unwrap(), tag_rooms.parse().unwrap(), datetime);
 
                     // Pass tag data to algorithms.py for addition into the database
                     let success = py_data(tag_info);
@@ -73,7 +71,7 @@ fn py_data(data: (String, String, String, String)) -> PyResult<()> {
     // Pass data to algorithms program
     Python::with_gil(|py| {
         let algorithm = PyModule::from_code(py, &al_string, "algorithms.py", "algorithms")?;
-        let add_result = algorithm.call1("add", data)?;
+        let _ = algorithm.call1("add", data)?;
         Ok(())
     })
 
