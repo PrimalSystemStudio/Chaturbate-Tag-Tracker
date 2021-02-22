@@ -28,13 +28,20 @@ def clean():
     query = "SELECT * FROM cb_log WHERE viewers > 10"
     df = pd.read_sql_query(query, connec)
 
+    # Make column for viewers/rooms ratio
+    ratio = df['viewers'] / df['rooms']
+    df.insert(loc=len(df.columns), column='ratio', value = ratio)
+    print(df.head())
+
+    
     # Close database
     connec.close()
 
-### views/room ratio
-### Add notes for high traffic tags/too many rooms etc.
+### Display high v/r ratio tags
+### Send cleaned data 
 
 # For sending cleaned data to Rust
+# def send():
 
 if __name__ == "__main__":
     clean()
