@@ -40,12 +40,13 @@ impl Scraper {
                 if let Some(tag_rooms) = tag_data[2].text() {
                     // Get current time
                     let utcnow = Utc::now();
-                    let datetime = utcnow.format("%d-%m-%Y %H:%M:%S").to_string();
+                    let date = utcnow.format("%d-%m-%Y").to_string();
+                    let time = utcnow.format("%H:%M").to_string();
 
-                    // println!("Tag: {} has {} viewers and {} rooms on {}", tag_name, tag_views, tag_rooms, datetime);
+                    // println!("Tag: {} has {} viewers and {} rooms on {} at {}", tag_name, tag_views, tag_rooms, date, time);
                     
                     
-                    let tag_info = (tag_name, tag_views.parse().unwrap(), tag_rooms.parse().unwrap(), datetime);
+                    let tag_info = (tag_name, tag_views.parse().unwrap(), tag_rooms.parse().unwrap(), date, time);
 
                     // Pass tag data to algorithms.py for addition into the database
                     let success = py_data(tag_info);
@@ -63,7 +64,7 @@ impl Scraper {
     }
 }
 
-fn py_data(data: (String, String, String, String)) -> PyResult<()> {
+fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
     // Turn algorithms file to string
     let al_string = fs::read_to_string("src/algorithms.py")
         .expect("Error reading file.");
