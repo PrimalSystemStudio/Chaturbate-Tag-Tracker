@@ -10,6 +10,7 @@ edition = "2018"
 crabler = "0.1.21"
 async-std = "1.6.2"
 chrono = "0.4"
+druid = { git = "https://github.com/linebender/druid.git" }
 
 [dependencies.pyo3]
 version = "0.13.1"
