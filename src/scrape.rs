@@ -40,7 +40,7 @@ impl Scraper {
                 if let Some(tag_rooms) = tag_data[2].text() {
                     // Get current time
                     let utcnow = Utc::now();
-                    let date = utcnow.format("%d-%m-%Y").to_string();
+                    let date = utcnow.format("%Y-%m-%d").to_string();
                     let time = utcnow.format("%H:%M").to_string();
 
                     // println!("Tag: {} has {} viewers and {} rooms on {} at {}", tag_name, tag_views, tag_rooms, date, time);
@@ -64,6 +64,7 @@ impl Scraper {
     }
 }
 
+// Use algorithms.py to store the data in sqlite file
 fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
     // Turn algorithms file to string
     let al_string = fs::read_to_string("src/algorithms.py")
@@ -78,6 +79,7 @@ fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
 
 }
 
+// Run scraper to get info from chaturbate.com/tags
 pub async fn one_scrape() -> Result<()> {
     let scraper = Scraper {};
     scraper.run(Opts::new().with_urls(ENTRY_PREFIX.to_vec()).with_threads(10)).await
