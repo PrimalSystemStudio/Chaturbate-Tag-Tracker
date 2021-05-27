@@ -1,13 +1,7 @@
+use crabler::CrablerError;
 use druid::widget::prelude::*;
 use druid::widget::{Align, Flex, Label, TextBox};
-use druid::{AppLauncher, Application, Data, Lens, WindowDesc, WidgetExt};
-use tokio::time::{self, Duration};
-use crabler::*;
-use std::fs;
-use crabler::*;
-use chrono::prelude::*;
-use pyo3::prelude::*;
-use tokio::time::{self, Duration};
+use druid::{AppLauncher, Data, Lens, WindowDesc, WidgetExt};
 
 mod scrape;
 
@@ -18,6 +12,9 @@ struct Init {
 
 
 fn build_ui() -> impl Widget<Init> {
+    // Indicating tags are being collected
+    let title = Label::new("Getting tags...");
+
     // Search box
     let l_search = Label::new("Search: ");
     let tb_search = TextBox::new()
@@ -29,14 +26,14 @@ fn build_ui() -> impl Widget<Init> {
 
     // Describe layout of UI
     let layout = Flex::column()
+        .with_child(title)
         .with_child(search);
     
     Align::centered(layout)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-
+#[async_std::main]
+async fn main() -> Result<(), CrablerError> {
     // Describe the main window
     let main_window = WindowDesc::new(build_ui())
         .title("Chaturbate Tag Tracker")
@@ -52,20 +49,8 @@ async fn main() -> Result<()> {
         .launch(init_state)
         .expect("Failed to launch application");
     
-    // Run the scraper while application is open
-    while Application::try_global().is_some() {
-        // Wait for the application to start
-        let mut wait = time::interval(Duration::from_secs(15));
-        let mut scrape_interval = time::interval(Duration::from_secs(3600));
-        wait.tick().await;
-        wait.tick().await;
-
-        println!("Scraper starting");
-        // Run the scraper to get info from chaturbate.com/tags
-        let scraper = scrape::Scraper {};
-        scraper.run(Opts::new().with_urls(scrape::ENTRY_PREFIX.to_vec()).with_threads(10)).await?;
-        scrape_interval.tick().await;
-    }
-
+    scrape::one_scrape().await
 }
+
+
     

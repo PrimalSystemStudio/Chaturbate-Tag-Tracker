@@ -11,7 +11,6 @@ crabler = "0.1.21"
 async-std = "1.6.2"
 chrono = "0.4"
 druid = { git = "https://github.com/linebender/druid.git" }
-tokio = { version = "0.3", features = ["full", "rt"] }
 
 [dependencies.pyo3]
 version = "0.13.1"
