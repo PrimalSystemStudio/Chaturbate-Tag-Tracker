@@ -2,6 +2,7 @@ use std::fs;
 use crabler::*;
 use chrono::prelude::*;
 use pyo3::prelude::*;
+use tokio::time::{self, Duration};
 
 const ENTRY_PREFIX: [&'static str; 10] = [
     "https://chaturbate.com/tags/?page=1",
@@ -77,11 +78,5 @@ fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
         Ok(())
     })
 
-}
-
-// Run scraper to get info from chaturbate.com/tags
-pub async fn one_scrape() -> Result<()> {
-    let scraper = Scraper {};
-    scraper.run(Opts::new().with_urls(ENTRY_PREFIX.to_vec()).with_threads(10)).await
 }
 

@@ -31,18 +31,43 @@ def clean():
     query = "SELECT * FROM cb_log WHERE viewers > 10"
     df = pd.read_sql_query(query, connec)
 
-    # Make column for viewers/rooms ratio
-    ratio = df['viewers'] / df['rooms']
-    df.insert(loc=len(df.columns), column='ratio', value = ratio)
-
-    # Sort by highest ratio
-    print(df.sort_values(by='ratio', ascending=False).head())
-
     # Close database
     connec.close()
 
-# For sending cleaned data to Rust
-# def send():
+    # Make column for viewers/rooms ratio
+    df['ratio'] = df['viewers'] / df['rooms']
+
+    # Sort by highest ratio
+    df = df.sort_values(by='ratio', ascending=False).head()
+
+    return df
+
+# Returns list of tags
+def tag_list(df):
+    drop = df['tags'].drop_duplicates
+    
+    return drop
+
+# Display tags with the highest v/r ratio
+def ratios(df):
+    sns.displot(df, x='time', y='ratio', hue='tag')
+    plt.show()
+
+# Display tags with highest viewers whose v/r ratio > 1
+def good_tags(df):
+    pass
+
+# Display tags whose v/r ratio < 1
+def bad_tags(df):
+    pass
+
+# Display tag variation by time of day
+def hour(df, tag):
+    pass
+
+# Display tag variation over days of the week
+def week(df, tag):
+    pass
 
 if __name__ == "__main__":
     clean()
