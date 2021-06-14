@@ -85,9 +85,15 @@ fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
 // Run scraper to get info from chaturbate.com/tags
 pub async fn main() -> Result<()> {
     loop {
+        let start = Utc::now().format("%H:%M:%S").to_string();
+        println!("Started at {}", start);
         let scraper = Scraper {};
         scraper.run(Opts::new().with_urls(ENTRY_PREFIX.to_vec()).with_threads(10)).await?;
+        let end = Utc::now().format("%H:%M:%S").to_string();
+        println!("Ended at {}", end);
         task::sleep(Duration::from_secs(3600)).await;
+        let restart = Utc::now().format("%H:%M:%S").to_string();
+        println!("Restarted at {}", restart);
     }
 }
 
