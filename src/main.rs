@@ -1,56 +1,93 @@
-use crabler::CrablerError;
-use druid::widget::prelude::*;
-use druid::widget::{Align, Flex, Label, TextBox};
-use druid::{AppLauncher, Data, Lens, WindowDesc, WidgetExt};
+use async_std::task;
+use crabler::*;
+use chrono::prelude::*;
+use pyo3::prelude::*;
+use std::fs;
+use std::time::Duration;
 
-mod scrape;
+const ENTRY_PREFIX: [&'static str; 10] = [
+    "https://chaturbate.com/tags/?page=1",
+    "https://chaturbate.com/tags/?page=2",
+    "https://chaturbate.com/tags/?page=3",
+    "https://chaturbate.com/tags/?page=4",
+    "https://chaturbate.com/tags/?page=5",
+    "https://chaturbate.com/tags/?page=6",
+    "https://chaturbate.com/tags/?page=7",
+    "https://chaturbate.com/tags/?page=8",
+    "https://chaturbate.com/tags/?page=9",
+    "https://chaturbate.com/tags/?page=10"];
 
-#[derive(Clone, Data, Lens)]
-struct Init {
-    tag: String,
+// Use WebScraper trait to get each item with the ".tag_row" class
+#[derive(WebScraper)]
+#[on_response(response_handler)]
+#[on_html(".tag_row", tag_handler)]
+
+struct Scraper {}
+
+impl Scraper {
+    // Print webpage status
+    async fn response_handler(&self, response: Response) -> Result<()> {
+        println!("Status {}", response.status);
+        Ok(())
+    }
+
+    async fn tag_handler(&self, _: Response, el: Element) -> Result<()> {
+        // Get all elements nested in .tag_row
+        let tag_data = el.children();
+        let tag_tag = &tag_data[0];
+
+        // Get tag name, views and rooms 
+        if let Some(tag_name) = tag_tag.children()[0].text() {
+            if let Some(tag_views) = tag_data[1].text() {
+                if let Some(tag_rooms) = tag_data[2].text() {
+                    // Get current time
+                    let utcnow = Utc::now();
+                    let date = utcnow.format("%Y-%m-%d").to_string();
+                    let time = utcnow.format("%H:%M").to_string();
+
+                    // println!("Tag: {} has {} viewers and {} rooms on {} at {}", tag_name, tag_views, tag_rooms, date, time);
+                    
+                    
+                    let tag_info = (tag_name, tag_views.parse().unwrap(), tag_rooms.parse().unwrap(), date, time);
+
+                    // Pass tag data to algorithms.py for addition into the database
+                    let success = py_data(tag_info);
+                    println!("{:?}", success);
+                    Ok(())
+                } else {
+                    Err(CrablerError::BodyParsing("Error, no rooms".to_string()))
+                }
+            } else {
+                Err(CrablerError::BodyParsing("Error, no viewers".to_string()))
+            }
+        } else {
+            Err(CrablerError::BodyParsing("Error, no name".to_string()))
+        }
+    }
 }
 
+// Use algorithms.py to store the data in sqlite file
+fn py_data(data: (String, String, String, String, String)) -> PyResult<()> {
+    // Turn algorithms file to string
+    let al_string = fs::read_to_string("src/algorithms.py")
+        .expect("Error reading file.");
 
-fn build_ui() -> impl Widget<Init> {
-    // Indicating tags are being collected
-    let title = Label::new("Getting tags...");
+    // Pass data to algorithms program
+    Python::with_gil(|py| {
+        let algorithm = PyModule::from_code(py, &al_string, "algorithms.py", "algorithms")?;
+        let _ = algorithm.call1("add", data)?;
+        Ok(())
+    })
 
-    // Search box
-    let l_search = Label::new("Search: ");
-    let tb_search = TextBox::new()
-        .with_placeholder("Enter tag to search")
-        .lens(Init::tag);
-    let search = Flex::row()
-        .with_child(l_search)
-        .with_child(tb_search);
-
-    // Describe layout of UI
-    let layout = Flex::column()
-        .with_child(title)
-        .with_child(search);
-    
-    Align::centered(layout)
 }
 
 #[async_std::main]
-async fn main() -> Result<(), CrablerError> {
-    // Describe the main window
-    let main_window = WindowDesc::new(build_ui())
-        .title("Chaturbate Tag Tracker")
-        .window_size((400.0, 400.0));
-
-    // Create starting app state
-    let init_state = Init {
-        tag: String::from("#"),
-    };
-
-    // Start application
-    AppLauncher::with_window(main_window)
-        .launch(init_state)
-        .expect("Failed to launch application");
-    
-    scrape::one_scrape().await
+// Run scraper to get info from chaturbate.com/tags
+pub async fn main() -> Result<()> {
+    loop {
+        let scraper = Scraper {};
+        scraper.run(Opts::new().with_urls(ENTRY_PREFIX.to_vec()).with_threads(10)).await?;
+        task::sleep(Duration::from_secs(3600)).await;
+    }
 }
 
-
-    
